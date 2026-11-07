@@ -861,7 +861,7 @@ function rosterBind(){const tb=document.getElementById("rtBody");if(!tb)return;c
     RED.push(r);c.value="";n.value="";m.innerHTML='<div class="status warn">Нэмэгдлээ — «Жагсаалт хадгалах» дарж хадгална уу.</div>';draw()};
   const ft=document.getElementById("rtFromTxt");if(ft)ft.onclick=()=>{RED=parseRoster(ta.value);draw()};
   draw()}
-function parseRoster(t){return t.split(/\r?\n/).map(l=>l.trim()).filter(Boolean).map(l=>{const p=l.split(/\t|,|;/).map(x=>x.trim());return {code:p[0]||"",name:p[1]||"",group:p[2]||""}}).filter(r=>/^[A-Za-zА-Яа-я0-9._-]{5,20}$/.test(r.code)&&/\d/.test(r.code)&&r.name)}
+function parseRoster(t){return t.split(/\r?\n/).map(l=>l.trim()).filter(Boolean).map(l=>{const p=l.split(/\t|,|;|\s{2,}/).map(x=>x.trim()).filter(Boolean);if(p.length>3&&/^\d+\.?$/.test(p[0]))p.shift();return {code:p[0]||"",name:p[1]||"",group:p[2]||""}}).filter(r=>/^[A-Za-zА-Яа-я0-9._-]{5,20}$/.test(r.code)&&/\d/.test(r.code)&&r.name)}
 async function teacherPost(body,msgId){const m=document.getElementById(msgId);m.innerHTML='<p class="small muted">Хадгалж байна…</p>';
   try{const r=await fetch(API_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(Object.assign({pw:teacherPw},body))});const j=await r.json();
     if(j.ok){m.innerHTML='<div class="status ok">Хадгалагдлаа.</div>';return j}m.innerHTML=`<div class="status bad">${j.error==="bad_pw"?"Нууц үг буруу.":"Хадгалж чадсангүй ("+esc(j.error)+")."}</div>`}
