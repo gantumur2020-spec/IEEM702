@@ -11,5 +11,5 @@ GitHub-д: шинэ IEEM702 repository үүсгэж (Settings → Pages → main
   Code.gs — Google Apps Script серверийн код (нууц үггүй)
 
 СЕРВЕР: Google Sheet «I.EEM702 Цахилгаан системийн тооцооны орчин үеийн аргууд — оноо» (gantumur2020@must.edu.mn)
-хуудсууд: EEM702_Оюутан (14 оюутан, ДаТС), EEM702_Log, EEM702_БиеДаалт, EEM702_НэгдсэнДүн.
+хуудсууд: EEM702_Оюутан (24 оюутан: ДаТС 14 + ЭХИС 10), EEM702_Log, EEM702_БиеДаалт, EEM702_НэгдсэнДүн.
 Apps Script нийтлэгдсэн (Anyone); index.html-ийн API_URL энэ серверт холбогдсон. Багшийн нууц үг зөвхөн Script Properties-д.
