@@ -471,14 +471,16 @@ function applyTheme(t){
   const sd=document.getElementById("side");if(sd)sd.style.borderRight=base.light?"1px solid var(--line)":"";
   const lg=document.querySelector(".brand svg rect");if(lg)lg.setAttribute("fill",acc);
 }
-let THEME=store.get("theme",null);applyTheme(THEME);
+function normT(t){if(t&&typeof t.id==="string"&&t.id.indexOf("+rev")>=0)t=Object.assign({},t,{id:t.id.replace("+rev",""),rev:true});return t}
+function revOn(){return !!(THEME&&THEME.rev)}
+let THEME=normT(store.get("theme",null));applyTheme(THEME);
 /* ---------- оюутны нэвтрэлт (зөвхөн жагсаалтад байгаа оюутан) ---------- */
 let AUTH=store.get("auth",null);if(AUTH&&!NOAPI&&!AUTH.srv){AUTH=null;try{store.set("auth",null)}catch(e){}}
 async function apiGet(params){
   if(!API_URL||API_URL.indexOf("http")!==0)throw new Error("noapi");
   const r=await fetch(API_URL+"?"+new URLSearchParams(params).toString());return r.json();
 }
-async function loadSettings(){try{const j=await apiGet({action:"settings"});if(j.ok&&j.theme){THEME=j.theme;store.set("theme",THEME);applyTheme(THEME)}}catch(e){}}
+async function loadSettings(){try{const j=await apiGet({action:"settings"});if(j.ok&&j.theme){THEME=normT(j.theme);store.set("theme",THEME);applyTheme(THEME)}}catch(e){}}
 function viewLogin(){
   return `<div class="login"><section class="hero"><span class="code">ХИЧЭЭЛ ${COURSE.code}</span><h1 style="font-size:24px">${COURSE.title}</h1>${towers}<p style="margin:8px 0 0">Хичээлд бүртгэлтэй оюутан өөрийн кодоор нэвтэрнэ.</p></section>
   <section class="card"><h2>Оюутан нэвтрэх</h2><form id="lgf" autocomplete="off" style="display:flex;flex-direction:column;gap:12px"><label class="field" for="lgc">Оюутны код<input id="lgc" class="blank" name="sc_x1" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" value="" required></label><label class="field" for="lgn">Овог нэр<input id="lgn" class="blank" name="sn_x2" style="text-transform:uppercase" autocomplete="off" autocorrect="off" spellcheck="false" value="" required></label><button class="btn pri" type="submit">Нэвтрэх</button></form><div id="lgm"></div>
@@ -803,14 +805,14 @@ async function grade(forced){
   const un=cur.qs.filter((_,i)=>!document.querySelector(`input[name=a${i}]:checked`)).length;
   if(un&&!forced){res.innerHTML=`<div class="status warn">${un} асуултад хариулаагүй байна.</div>`;return}
   let sc=0;cur.qs.forEach((x,i)=>{const c=document.querySelector(`input[name=a${i}]:checked`);const sel=c?+c.value:-1;if(sel===x.q[2])sc++;
-    document.querySelectorAll(`#q${i} label`).forEach(lb=>{const v=+lb.querySelector("input").value;if(cur.kind==="t"){if(v===x.q[2])lb.classList.add("right");else if(v===sel)lb.classList.add("wrong")}lb.querySelector("input").disabled=true})});
-  cur.done=true;clearInterval(timerId);if(cur.kind==="t")document.getElementById("tf").classList.add("done");document.getElementById("sub").disabled=true;
+    document.querySelectorAll(`#q${i} label`).forEach(lb=>{const v=+lb.querySelector("input").value;if(cur.kind==="t"&&revOn()){if(v===x.q[2])lb.classList.add("right");else if(v===sel)lb.classList.add("wrong")}lb.querySelector("input").disabled=true})});
+  cur.done=true;clearInterval(timerId);if(cur.kind==="t"&&revOn())document.getElementById("tf").classList.add("done");document.getElementById("sub").disabled=true;
   const sec=Math.round((Date.now()-cur.start)/1000),at=new Date().toISOString(),tot=cur.qs.length;
   let key,rec;
   if(cur.kind==="t"){key="t"+pad(cur.n);const L=local();const prev=L[key];L[key]={best:Math.max(sc,prev?prev.best:0),last:sc,attempts:(prev?prev.attempts:0)+1,at};store.set("results",L)}
   else{key="final";store.set("final",{score:sc,at,sec})}
   const vcode=fnv(`${name}|${group}|${key}|${sc}|${at}`);
-  res.innerHTML=`<div class="score"><b>${sc}/${tot}</b>${cur.kind==="f"?"<span>Улирлын шалгалтын зөв хариулт харагдахгүй.</span>":""}<span>${forced?"Хугацаа дуусч автоматаар илгээгдлээ · ":""}${Math.floor(sec/60)} мин ${sec%60} с</span></div><div id="sv" class="status warn">Дүнг хадгалж байна…</div>`;
+  res.innerHTML=`<div class="score"><b>${sc}/${tot}</b>${cur.kind==="f"?"<span>Улирлын шалгалтын зөв хариулт харагдахгүй.</span>":(revOn()?"":"<span>Зөв хариулт харагдахгүй.</span>")}<span>${forced?"Хугацаа дуусч автоматаар илгээгдлээ · ":""}${Math.floor(sec/60)} мин ${sec%60} с</span></div><div id="sv" class="status warn">Дүнг хадгалж байна…</div>`;
   nav();
   const sv=document.getElementById("sv");
   try{
@@ -833,7 +835,7 @@ async function loadTeacher(pw){
   teacherErr=null;
   try{const r=await fetch(API_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:"teacher",pw})});const j=await r.json();
     if(!j.ok){teacherRows=null;return j.error==="bad_pw"?"bad":"err"}
-    teacherRows=j.rows;teacherPw=pw;ROSTER=j.roster||[];if(j.theme){THEME=j.theme;store.set("theme",THEME);applyTheme(THEME)}return "ok"}
+    teacherRows=j.rows;teacherPw=pw;ROSTER=j.roster||[];if(j.theme){THEME=normT(j.theme);store.set("theme",THEME);applyTheme(THEME)}return "ok"}
   catch(e){teacherErr="Сервертэй холбогдож чадсангүй.";return "err"}
 }
 
@@ -844,6 +846,7 @@ function viewSettings(){
   <section class="card"><h2>Вэбийн үндсэн өнгө</h2><p class="small muted">Сонгосон өнгө бүх оюутанд адилхан харагдана.</p>
   ${[["Бараан цэс",0],["Цайвар цэс",1]].map(([g,l])=>`<div class="swgrp">${g}</div><div class="swatches">${Object.entries(THEMES).filter(([k,t])=>!!t.light===!!l).map(([k,t])=>`<button type="button" class="sw ${k===cur?"on":""}" data-th="${k}"><i style="background:${t.hero}"><b style="background:${t.navy}"></b></i><span>${t.name}</span></button>`).join("")}</div>`).join("")}
   <div class="formrow"><label class="field" for="accIn" style="flex:0 0 auto">Өөр товчны өнгө<input type="color" id="accIn" value="${(THEME&&THEME.accent)||THEMES[cur].accent}" style="width:70px;height:38px;padding:2px"></label><button class="btn pri" id="thSave">Өнгийг хадгалах</button></div><div id="thMsg"></div></section>
+  <section class="card"><h2>Тестийн дараа алдааг харуулах</h2><p class="small muted">Асаавал оюутан лекцийн тест дууссаны дараа алдаатай, зөв хариулт ба тайлбарыг харна. Унтраасан үед зөвхөн оноогоо харна (анхдагч: харуулахгүй).</p><label class="small" style="display:flex;align-items:center;gap:8px;margin:8px 0"><input type="checkbox" id="revIn" ${revOn()?"checked":""} style="width:18px;height:18px"> Алдаатай тестийг оюутанд харуулах</label><div class="formrow"><button class="btn pri" id="revSave" type="button">Хадгалах</button></div><div id="revMsg"></div></section>
   <section class="card"><h2>Оюутны жагсаалт (${ROSTER.length})</h2><p class="small muted">Зөвхөн энэ жагсаалтад байгаа оюутан код, нэрээрээ нэвтэрнэ. Мөр бүрт: <b>код, овог нэр, сургууль/анги</b> (Excel-ээс хуулж тавьж болно — таслал эсвэл Tab-аар тусгаарлана).</p>
   <div class="tbl"><table class="rtab"><thead><tr><th class="c">№</th><th>Оюутны код</th><th>Овог нэр</th><th>Сургууль/анги</th><th></th></tr></thead><tbody id="rtBody"></tbody>
   <tfoot><tr><td class="c">+</td><td><input id="rnCode" placeholder="N.ES26E108"></td><td><input id="rnName" placeholder="Б.БАТ"></td><td><input id="rnGroup" placeholder="ДаТС"></td><td><button class="btn pri sm" type="button" id="rnAdd">＋ Нэмэх</button></td></tr></tfoot></table></div>
@@ -1127,9 +1130,10 @@ function render(){
   document.querySelectorAll("[data-grade]").forEach(b=>b.onclick=async()=>{const n=+b.dataset.grade,code=b.dataset.code;const g=document.getElementById("gr"+n).value.trim(),c=document.getElementById("gc"+n).value.trim();
     if(g!==""&&!(+g>=0&&+g<=5)){document.getElementById("grMsg"+n).innerHTML='<div class="status bad">Дүн 0–5 байна.</div>';return}
     if(await teacherPost({action:"grade",code,bd:n,grade:g,comment:c},"grMsg"+n)){const r=(teacherRows||[]).find(x=>x.code===code);if(r&&r.bd&&r.bd[n]){r.bd[n].grade=g;r.bd[n].comment=c}}});
-  document.querySelectorAll("[data-th]").forEach(b=>b.onclick=()=>{const k=b.dataset.th;THEME={id:k};applyTheme(THEME);const ai=document.getElementById("accIn");if(ai)ai.value=THEMES[k].accent;document.querySelectorAll("[data-th]").forEach(x=>x.classList.toggle("on",x===b))});
+  document.querySelectorAll("[data-th]").forEach(b=>b.onclick=()=>{const k=b.dataset.th;THEME={id:k,rev:revOn()};applyTheme(THEME);const ai=document.getElementById("accIn");if(ai)ai.value=THEMES[k].accent;document.querySelectorAll("[data-th]").forEach(x=>x.classList.toggle("on",x===b))});
   const ai=document.getElementById("accIn");if(ai)ai.oninput=()=>{THEME=Object.assign({id:(THEME&&THEME.id)||"forest"},THEME,{accent:ai.value});applyTheme(THEME)};
-  const ts=document.getElementById("thSave");if(ts)ts.onclick=async()=>{const t=THEME||{id:"forest"};if(await teacherPost({action:"setTheme",theme:t},"thMsg"))store.set("theme",t)};
+  const rvs=document.getElementById("revSave");if(rvs)rvs.onclick=async()=>{const on=document.getElementById("revIn").checked;const t=Object.assign({id:"forest"},THEME||{},{rev:on});if(await teacherPost({action:"setTheme",theme:Object.assign({},t,{id:(t.id||"forest")+(on?"+rev":""),rev:undefined})},"revMsg")){THEME=t;store.set("theme",t)}};
+  const ts=document.getElementById("thSave");if(ts)ts.onclick=async()=>{const t=THEME||{id:"forest"};if(await teacherPost({action:"setTheme",theme:Object.assign({},t,{id:(t.id||"forest")+(t.rev?"+rev":""),rev:undefined})},"thMsg"))store.set("theme",t)};
   rosterBind();
   const rs=document.getElementById("rsSave");if(rs)rs.onclick=async()=>{const list=parseRoster(document.getElementById("rosterIn").value);if(!list.length){document.getElementById("rsMsg").innerHTML='<div class="status bad">Жагсаалт хоосон эсвэл буруу хэлбэртэй.</div>';return}if(await teacherPost({action:"setRoster",roster:list},"rsMsg")){ROSTER=list;document.querySelector("#view h2+p+textarea")}};
   const rb=document.getElementById("refr");if(rb)rb.onclick=async()=>{rb.textContent="…";await loadTeacher(teacherPw);render()};
