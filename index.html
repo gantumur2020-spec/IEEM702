@@ -1145,6 +1145,7 @@ function render(){
 window.addEventListener("hashchange",()=>{if(cur&&cur.kind==="f"&&!cur.done&&location.hash!=="#final"){location.hash="final";return}render();window.scrollTo(0,0)});
 document.getElementById("menuBtn").onclick=()=>document.getElementById("side").classList.toggle("show");
 document.getElementById("q").addEventListener("input",e=>{const v=e.target.value.trim().toLowerCase();if(!v)return;const l=D.lec.find(x=>(x.t+" "+x.kw.join(" ")).toLowerCase().includes(v));if(l&&location.hash!=="#lecture-"+l.n)location.hash="lecture-"+l.n});
+if(ss.get("tpw")===null){try{const _p=localStorage.getItem("portal.pw");if(_p)ss.set("tpw",_p)}catch(e){}}
 if(ss.get("tpw")&&!UNLOCK){UNLOCK=true;loadTeacher(ss.get("tpw")).then(r=>{if(r==="bad"){UNLOCK=false;ss.set("tpw","")}render()})}
 render();
 loadSettings();loadMyBD();
